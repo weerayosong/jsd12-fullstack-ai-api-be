@@ -1,32 +1,36 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
 
 import { users } from "./fakeData/fakeUsers.js";
 import { router as apiRoutes } from "./routes/index.js";
 import { connectDB } from "./config/mongodb.js";
 import { connectSupabase } from "./config/supabase.js";
+import { limiter } from "./middlewares/rateLimiter.js";
 
 const app = express();
 
+app.use(helmet());
+
 const corsOptions = {
-  origin: [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175",
-  ], // frontend domain
-  credentials: true, // ✅ allow cookies to be sent
+    origin: [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:5175",
+    ], // frontend domain
+    credentials: true, // ✅ allow cookies to be sent
 };
 
 app.use(cors(corsOptions));
-
+app.use(limiter);
 app.use(express.json());
 app.use(cookieParser());
 
 app.use("/api", apiRoutes);
 
 app.get("/", (req, res) => {
-  res.send(`<!doctype html>
+    res.send(`<!doctype html>
   <html lang="en">
     <head>
       <meta charset="utf-8" />
@@ -58,17 +62,24 @@ app.get("/", (req, res) => {
   </html>`);
 });
 
+// Centralized error for 404 Not Found
+app.use((req, res, next) => {
+    const error = new Error(`Not Found - ${req.originalUrl}`);
+    error.status = 404;
+    next(error);
+});
+
 // Centralized error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || "Internal Server Error!",
-    path: req.originalUrl,
-    method: req.method,
-    timestamp: new Date().toISOString(),
-    stack: err.stack,
-  });
+    console.error(err.stack);
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || "Internal Server Error!",
+        path: req.originalUrl,
+        method: req.method,
+        timestamp: new Date().toISOString(),
+        stack: err.stack,
+    });
 });
 
 const PORT = 3002;
@@ -77,5 +88,5 @@ await connectDB();
 await connectSupabase();
 
 app.listen(PORT, () => {
-  console.log(`Server running on PORT: ${PORT} 🟢`);
+    console.log(`Server running on PORT: ${PORT} 🟢`);
 });
