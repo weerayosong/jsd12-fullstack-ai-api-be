@@ -19,6 +19,8 @@ const corsOptions = {
         "http://localhost:5174",
         "http://localhost:5175",
         "https://jsd12-fullstack-ai-api-fe.vercel.app",
+        "https://jsd12-full-stack-app-fe.vercel.app",
+        "https://jsd12-full-stack-app-fe2.vercel.app",
     ], // frontend domain
     credentials: true, // ✅ allow cookies to be sent
 };
